@@ -186,5 +186,5 @@ The architecture of the model is defined using the `NN` class and can consist of
 ## Results
 After training the model, it was evaluated on the test dataset. The performance metrics were as follows:
 - **Test Accuracy:** The final test accuracy achieved was **98.42%**, demonstrating the model's high capability to generalize well to unseen data.
-- **Final Loss:** The loss on the test set was measured at **0.0021**, reflecting a low error rate and confirming that the model has learned to classify the data accurately.
+- **Final Loss:** The loss on the test set was measured at **0.0021**, reflecting a low error rate and confirming that the model has learned to classify the data accurately.  
 These results highlight the effectiveness of the implemented neural network architecture and the training process.
