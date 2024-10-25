@@ -44,6 +44,31 @@ class ReLU():
 ```
 The `ReLU` activation function applies element-wise non-linearity, setting negative values to zero.
 
+### Tanh Activation:
+The `Tanh` activation applies the hyperbolic tangent function element-wise:  
+$$f(s) = tanh(s)$$  
+
+```python
+class Tanh():
+    def forward(self, s):
+        self.s = s
+        self.tanh = np.tanh(s)
+        return self.tanh
+```
+The `Tanh` activation function is useful in cases where the model needs to output both negative and positive values.
+
+### Sigmoid Activation:
+The `Sigmoid` activation function applies the following operation element-wise:  
+$$f(s) = \frac{1}{1 + e^{-s}}$$  
+```python
+class Sigmoid():
+    def forward(self, s):
+        self.s = s
+        self.sigmoid = 1 / (1 + np.exp(-s))
+        return self.sigmoid
+```
+The `Sigmoid` activation function is often used in binary classification problems, as it outputs probabilities.  
+
 ### Softmax Activation:
 The softmax function is applied to the output layer to normalize the logits into probabilities. The softmax  function is defined as:  
 $$\sigma(s)_{i} = \frac{e^{s_i}}{\sum e^{s_j}}$$  
@@ -56,7 +81,7 @@ class Softmax():
         self.output = e_s / e_s.sum(axis=0, keepdims=True)
         return self.output
 ```
-The Softmax class normalizes the output scores to represent probabilities.
+The `Softmax` class normalizes the output scores to represent probabilities.
 
 ### Cross Entropy Loss:
 The cross-entropy loss for multi-class classification is defined as:  
@@ -79,6 +104,42 @@ class CrossEntropyLoss():
 ```
 The `CrossEntropyLoss` function calculates the loss between predicted probabilities and true labels, helping measure the error for classification tasks.
 
+### Binary Cross Entropy Loss:
+For binary classification, the loss is:  
+$$L = -\frac{1}{N}\sum_{i = 1}^{N}\big[ y_{i}\log(\hat{y_{i}}) + (1 - y_{i})\log(1 - \hat{y_{i}}) \big]$$  
+Where:
+- $$y$$ is the true label (one-hot encoded).
+- $$\hat{y}$$ is the predicted probability from softmax.
+- $$N$$ is the number of samples.
+
+```python
+class BinaryCrossEntropyLoss():
+    def forward(self, x_L, y):
+        epsilon = 1e-12
+        x_L = np.clip(x_L, epsilon, 1 - epsilon)
+        self.x_L = x_L
+        self.y = y
+        self.N = x_L.shape[1]
+        return -np.sum(y * np.log(x_L) + (1 - y) * np.log(1 - x_L)) / self.N
+```
+The `BinaryCrossEntropyLoss` function loss is suitable for problems with two classes.
+
+### Mean Squared Error:
+`MSELoss` is commonly used in regression tasks and is defined as:  
+$$L = \frac{1}{N}\sum_{i = 1}^{N}(x_{L} - y)^{2}$$  
+Where:
+- $$x_{L}$$ is the predicted output.
+- $$y$$ is the true label.
+
+```python
+class MSELoss():
+    def forward(self, x_L, y):
+        self.x_L = x_L
+        self.y = y
+        self.N = x_L.shape[1]
+        return np.sum((x_L - y) ** 2) / self.N
+```
+
 ## Back Propagation
 Backward propagation involves calculating the gradients of the loss with respect to each parameter using the chain rule.
 
@@ -86,7 +147,8 @@ Backward propagation involves calculating the gradients of the loss with respect
 The gradients for the linear layer are computed as:  
 $$\frac{\partial L}{\partial W} = x \cdot \delta^{T}$$  
 $$\frac{\partial L}{\partial b} = \sum \delta$$  
-Where $$\delta$$ is the error propagated backward from the next layer.
+Where:
+- $$\delta$$ is the error propagated backward from the next layer.
 
 ```python
 class Linear():
@@ -97,6 +159,42 @@ class Linear():
 ```
 The `Linear` class computes gradients for the weights and biases, passing the error backward through the network.
 
+### ReLU Backward:
+The gradient for `ReLU` is:  
+$$\frac{\partial L}{\partial s} = \delta \cdot I(s > 0)$$  
+Where:
+- $$I(s > 0)$$ is an indicator function that is $$1$$ if $$s > 0$$, and $$0$$ otherwise.
+
+```python
+class ReLU():
+    def backward(self, gradient):
+        return gradient * (self.s > 0).astype(float)
+```
+
+### Tanh Backward:
+For tanh, the gradient is:  
+$$\frac{\partial L}{\partial s} = \delta \cdot (1 - tanh(s)^{2})$$  
+Where:
+- $$tanh(s)$$ is the hyperbolic tangent function.
+
+```python
+class Tanh():
+    def backward(self, gradient):
+        return gradient * (1 - self.tanh ** 2)
+```
+
+### Sigmoid Backward:
+For `sigmoid`, the gradient is:  
+$$\frac{\partial L}{\partial s} = \delta \cdot \sigma(s) \cdot (1 - \sigma(s))$$  
+Where:
+- $$\sigma(s)$$ is the sigmoid function.
+
+```python
+class Sigmoid():
+    def backward(self, gradient):
+        return gradient * (self.sigmoid * (1 - self.sigmoid))
+```
+
 ### Softmax Backward:
 ```python
 class Softmax():
@@ -105,21 +203,35 @@ class Softmax():
 ```
 The `Softmax` backward pass is straightforward since the gradient is propagated directly.
 
-### ReLU Backward:
-```python
-class ReLU():
-    def backward(self, gradient):
-        return gradient * (self.s > 0).astype(float)
-```
-The `ReLU` backward method computes the gradient by passing the error only where the input was greater than zero.
-
 ### Cross Entropy Loss Backward:
+For `CrossEntropyLoss`, the gradient with respect to the input $$s$$ is:  
+$$\frac{\partial L}{\partial s} = \hat{y} - y$$
+
 ```python
 class CrossEntropyLoss():
     def backward(self):
         return (self.x_L - self.y) / self.N
 ```
-The `CrossEntropyLoss` backward method calculates the gradient of the loss with respect to the output.
+
+### Binary Cross Entropy Loss Backward:
+For `BinaryCrossEntropyLoss`, the gradient with respect to the input $$s$$ is:  
+$$\frac{\partial L}{\partial s} = \frac{\hat{y} - y}{\hat{y}(1 - \hat{y})}$$
+
+```python
+class BinaryCrossEntropyLoss():
+    def backward(self):
+        return (self.x_L - self.y) / (self.x_L * (1 - self.x_L) * self.N)
+```
+
+### Mean Squared Error Backward:
+For `MSELoss`, the gradient with respect to the input $$s$$ is:  
+$$\frac{\partial L}{\partial s} = 2(x_{L} - y)$$
+
+```python
+class MSELoss():
+    def backward(self):
+        return 2 * (self.x_L - self.y) / self.N
+```
 
 ## Optimizers
 Optimizers update the weights of the model during training, based on the gradients computed during backpropagation.
@@ -128,8 +240,8 @@ Optimizers update the weights of the model during training, based on the gradien
 The basic optimizer implements standard stochastic gradient descent (SGD):  
 $$W = W - \eta\nabla L(W)$$  
 Where:
-$$\nabla L(W)$$ is the gradient of the loss function with respect to the weights.
-$$\eta$$ is the learning rate.
+- $$\nabla L(W)$$ is the gradient of the loss function with respect to the weights.
+- $$\eta$$ is the learning rate.
 ```python
 class BasicOptimizer(Optimizer):
     def __init__(self, lr=1e-3):
